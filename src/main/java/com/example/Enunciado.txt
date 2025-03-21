@@ -1,0 +1,44 @@
+Hola,
+
+Per recuperar orientació a objectes, fes un projecte en el que hi ha d’haver la següent estructura d’objectes:
+
+- Game: 
+
+Atributs: name de tipus String i levels que és una llista de tipus Level
+
+- Level:
+
+Atributs: name de tipus String, layers que és una llista de tipus Layers, zones que és una llista de tipus Zones i sprites que és una llista de tipus Sprites
+
+- Sprite:
+
+Atributs: type i imageFile de tipus String, x, y, spriteWidth, spriteHeight de tipus enter
+
+- Zone:
+
+Atributs: type i color de tipus String, x, y, width i height de tipus enter
+
+- Layer:
+
+Atributs: name i tilesSheetFile de tipus String, x, y, depth, tilesWidth i tilesHeight de tipus enter, tilemap una llista de dues dimensions d’enters. Aleshores:
+
+1 - Has de poder llegir arxius .json com el del següent enllaç i crear una estructura d’objectes segons el què hi ha definit a l’arxiu .json.
+
+https://raw.githubusercontent.com/optimisme/DAM-ServeisProcessos/refs/heads/main/07 NodeJS - WebSockets/EinaJocs/test_game/game_data.json
+
+2 - Després fes un menú per:
+
+- afegir/esborrar/modificar nivells al joc
+- afegir/esborrar/modificar layers d’un nivell
+- afegir/esborrar/modificar zones d’un nivell
+
+3 - Guardar les modificacions de l’estructura a un nou arxiu .json
+
+La condició és que cada un dels objectes anteriors tindrà la funció "toJson()” que transformarà el seu contingut en una cadena de text “JSON”
+per facilitar guardar-ho a l’arxiu final.
+
+Si tens dubtes en parlem
+
+Salut,
+
+Albert
