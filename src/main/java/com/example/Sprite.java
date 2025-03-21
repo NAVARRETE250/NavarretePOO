@@ -1,7 +1,6 @@
 package com.example;
 
-import org.json.JSONObject;
-
+import org.json.simple.JSONObject;
 public class Sprite {
     private String type;
     private String imageFile;

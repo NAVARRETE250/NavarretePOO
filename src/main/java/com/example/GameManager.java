@@ -159,6 +159,7 @@ public class GameManager {
         int height = ((Long) spriteJson.get("height")).intValue();
         return new Sprite(type, imageFile, x, y, width, height);
     }
+
     private static void saveGameToJson(Game game, String folderPath, String filename) {
         File folder = new File(folderPath);
         if (!folder.exists()) {
@@ -171,13 +172,16 @@ public class GameManager {
     
         String filePath = folderPath + filename;
         try (FileWriter file = new FileWriter(filePath)) {
-            file.write(game.toJson().toJSONString());
+            JSONObject gameJson = game.toJson();
+            file.write(gameJson.toJSONString());
             file.flush();
             System.out.println("Juego guardado en: " + filePath);
         } catch (Exception e) {
             System.out.println("Error al guardar el archivo JSON: " + e.getMessage());
+            e.printStackTrace(); // Muestra la traza completa del error
         }
     }
+
     private static String selectJsonFile(List<String> jsonFiles) {
         if (jsonFiles.isEmpty()) {
             System.out.println("No se encontraron archivos JSON en la carpeta.");
