@@ -1,8 +1,7 @@
 package com.example;
 
-import org.json.JSONObject;
-import org.json.JSONArray;
-import org.json.JSONTokener;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import java.util.List;
 
 public class Level {
@@ -23,28 +22,25 @@ public class Level {
         JSONObject json = new JSONObject();
         json.put("name", this.name);
         json.put("description", this.description);
-        
-        // Capas
+    
         JSONArray layersArray = new JSONArray();
         for (Layer layer : this.layers) {
-            layersArray.put(layer.toJson());
+            layersArray.add(layer.toJson());
         }
         json.put("layers", layersArray);
-        
-        // Zonas
+    
         JSONArray zonesArray = new JSONArray();
         for (Zone zone : this.zones) {
-            zonesArray.put(zone.toJson());
+            zonesArray.add(zone.toJson());
         }
         json.put("zones", zonesArray);
-        
-        // Sprites
+    
         JSONArray spritesArray = new JSONArray();
         for (Sprite sprite : this.sprites) {
-            spritesArray.put(sprite.toJson());
+            spritesArray.add(sprite.toJson());
         }
         json.put("sprites", spritesArray);
-        
+    
         return json;
     }
 

@@ -1,9 +1,6 @@
 package com.example;
 
-import org.json.JSONObject;
-import org.json.JSONArray;
-import org.json.JSONTokener;
-
+import org.json.simple.JSONObject;
 public class Sprite {
     private String type;
     private String imageFile;
@@ -29,6 +26,7 @@ public class Sprite {
         json.put("y", this.y);
         json.put("width", this.width);
         json.put("height", this.height);
+    
         return json;
     }
 

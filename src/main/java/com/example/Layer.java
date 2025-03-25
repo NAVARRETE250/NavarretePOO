@@ -1,8 +1,8 @@
 package com.example;
 
-import org.json.JSONObject;
-import org.json.JSONArray;
-import org.json.JSONTokener;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
 import java.util.List;
 
 public class Layer {
@@ -97,14 +97,17 @@ public class Layer {
         json.put("depth", this.depth);
         json.put("tilesWidth", this.tilesWidth);
         json.put("tilesHeight", this.tilesHeight);
-        
-        // TileMap
+    
         JSONArray tileMapArray = new JSONArray();
         for (List<Integer> row : this.tileMap) {
-            tileMapArray.put(new JSONArray(row));
+            JSONArray rowArray = new JSONArray();
+            for (Integer cell : row) {
+                rowArray.add(cell);
+            }
+            tileMapArray.add(rowArray);
         }
         json.put("tileMap", tileMapArray);
-        
+    
         return json;
     }
 }

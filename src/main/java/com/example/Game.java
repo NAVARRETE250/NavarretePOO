@@ -1,8 +1,7 @@
 package com.example;
 
-import org.json.JSONObject;
-import org.json.JSONArray;
-import org.json.JSONTokener;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import java.util.List;
 
 public class Game {
@@ -18,13 +17,13 @@ public class Game {
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
         json.put("name", this.name);
-        
+    
         JSONArray levelsArray = new JSONArray();
         for (Level level : this.levels) {
-            levelsArray.put(level.toJson());
+            levelsArray.add(level.toJson());
         }
         json.put("levels", levelsArray);
-        
+    
         return json;
     }
 

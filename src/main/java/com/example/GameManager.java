@@ -1,16 +1,15 @@
 package com.example;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import org.json.JSONObject;
-import org.json.JSONArray;
-import org.json.JSONTokener;
 
 public class GameManager {
     private static final String RESOURCES_PATH = "NavarretePOO/src/main/resources/";
@@ -61,39 +60,21 @@ public class GameManager {
     }
 
     private static Game loadGameFromJson(String folderPath, String filename) {
-    try {
-        File file = new File(folderPath, filename);
-        FileInputStream fis = new FileInputStream(file);
-        
-        // Usa JSONTokener de org.json
-        JSONObject jsonObject = new JSONObject(new JSONTokener(fis));
-        
-        String name = jsonObject.getString("name");
-        JSONArray levelsArray = jsonObject.getJSONArray("levels");
-        List<Level> levels = new ArrayList<>();
-        
-        for (int i = 0; i < levelsArray.length(); i++) {
-            JSONObject levelJson = levelsArray.getJSONObject(i);
-            // Continúa con el parsing de cada nivel...
+        JSONParser parser = new JSONParser();
+        File file = new File(folderPath + filename);
+        if (!file.exists()) {
+            System.out.println("El archivo no existe: " + file.getAbsolutePath());
+            return null;
         }
-        
-        fis.close();
-        return new Game(name, levels);
-    } catch (Exception e) {
-        System.out.println("Error al cargar el archivo JSON: " + e.toString());
-        return null;
-    }
-}
 
-// Método de conversión de emergencia
-private static JSONObject convertSimpleToStandard(org.json.simple.JSONObject simpleJson) {
-    try {
-        return new JSONObject(simpleJson.toJSONString());
-    } catch (Exception e) {
-        System.out.println("Error de conversión: " + e.getMessage());
-        return null;
+        try (FileReader reader = new FileReader(file)) {
+            JSONObject jsonObject = (JSONObject) parser.parse(reader);
+            return parseGame(jsonObject);
+        } catch (Exception e) {
+            System.out.println("Error al cargar el archivo JSON: " + e.getMessage());
+            return null;
+        }
     }
-}
 
     private static Game parseGame(JSONObject jsonObject) {
         String name = (String) jsonObject.get("name");
@@ -196,16 +177,65 @@ private static JSONObject convertSimpleToStandard(org.json.simple.JSONObject sim
         String filePath = folderPath + File.separator + filename;
     
         try (FileWriter file = new FileWriter(filePath)) {
-            JSONObject jsonObject = game.toJson();
-            String prettyJson = jsonObject.toString(4); // 4 espacios de indentación
+            JSONObject gameJson = game.toJson();
+            
+            // Pretty print manual para json-simple
+            String jsonString = gameJson.toJSONString();
+            String prettyJson = formatJsonSimple(jsonString); // ¡Nuevo método!
             
             file.write(prettyJson);
             System.out.println("Juego guardado en: " + filePath);
         } catch (Exception e) {
+            System.out.println("Error al guardar el archivo JSON: " + e.getMessage());
             e.printStackTrace();
         }
     }
     
+    // Método auxiliar para formatear JSON (para org.json.simple)
+    private static String formatJsonSimple(String jsonString) {
+        StringBuilder prettyJson = new StringBuilder();
+        int indentLevel = 0;
+        boolean inQuote = false;
+    
+        for (char c : jsonString.toCharArray()) {
+            if (c == '"' && (prettyJson.length() == 0 || prettyJson.charAt(prettyJson.length() - 1) != '\\')) {
+                inQuote = !inQuote;
+            }
+    
+            if (!inQuote) {
+                switch (c) {
+                    case '{':
+                    case '[':
+                        prettyJson.append(c).append("\n").append(getIndent(++indentLevel));
+                        break;
+                    case '}':
+                    case ']':
+                        prettyJson.append("\n").append(getIndent(--indentLevel)).append(c);
+                        break;
+                    case ',':
+                        prettyJson.append(c).append("\n").append(getIndent(indentLevel));
+                        break;
+                    case ':':
+                        prettyJson.append(c).append(" ");
+                        break;
+                    default:
+                        prettyJson.append(c);
+                }
+            } else {
+                prettyJson.append(c);
+            }
+        }
+        return prettyJson.toString();
+    }
+    
+    private static String getIndent(int level) {
+        StringBuilder indent = new StringBuilder();
+        for (int i = 0; i < level; i++) {
+            indent.append("    "); // 4 espacios por nivel
+        }
+        return indent.toString();
+    }
+
     private static String selectJsonFile(List<String> jsonFiles) {
         if (jsonFiles.isEmpty()) {
             System.out.println("No se encontraron archivos JSON en la carpeta.");
