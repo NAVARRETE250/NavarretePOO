@@ -10,6 +10,7 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 
 public class GameManager {
     private static final String RESOURCES_PATH = "NavarretePOO/src/main/resources/";
@@ -160,7 +161,6 @@ public class GameManager {
         return new Sprite(type, imageFile, x, y, width, height);
     }
 
-
         private static void saveGameToJson(Game game, String folderPath, String filename) {
             File folder = new File(folderPath);
             if (!folder.exists()) {
@@ -189,7 +189,6 @@ public class GameManager {
             }
         }
     
-        // Método auxiliar para formatear JSON
         private static String formatJsonSimple(String jsonString) {
             StringBuilder prettyJson = new StringBuilder();
             int indentLevel = 0;
@@ -253,7 +252,6 @@ public class GameManager {
             return prettyJson.toString();
         }
     
-        // Método para detectar la clave "tileMap" (NUEVO)
         private static boolean isTileMapKey(String jsonString, int pos) {
             if (pos < 10) return false; // Evitar IndexOutOfBounds
             String preceding = jsonString.substring(Math.max(0, pos - 10), pos);
@@ -320,9 +318,24 @@ public class GameManager {
         }
     }
 
-    private static void playInTerminal(Game game) {
-        List<Level> levels = game.getLevels();
-        while (true) {
+private static void clearScreen() {
+    try {
+        if (System.getProperty("os.name").contains("Windows")) {
+            new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+        } else {
+            System.out.print("\033[H\033[2J");
+            System.out.flush();
+        }
+    } catch (Exception e) {
+        // Fallback: imprime 50 líneas vacías
+        for (int i = 0; i < 50; i++) System.out.println();
+    }
+}
+
+private static void playInTerminal(Game game) {
+    List<Level> levels = game.getLevels();
+    while (true) {
+        try {
             System.out.println("\n--- Selecciona un Nivel para Jugar ---");
             for (int i = 0; i < levels.size(); i++) {
                 System.out.println((i + 1) + ". " + levels.get(i).getName());
@@ -330,44 +343,61 @@ public class GameManager {
             System.out.println((levels.size() + 1) + ". Volver al Menú Principal");
 
             String choice = scanner.nextLine();
-            try {
-                int choiceInt = Integer.parseInt(choice);
+            int choiceInt = Integer.parseInt(choice);
 
-                if (choiceInt >= 1 && choiceInt <= levels.size()) {
-                    Level selectedLevel = levels.get(choiceInt - 1);
-                    playLevelInTerminal(selectedLevel);
-                } else if (choiceInt == levels.size() + 1) {
-                    break;
-                } else {
-                    System.out.println("Opción no válida, por favor inténtelo de nuevo.");
-                }
-            } catch (NumberFormatException e) {
-                System.out.println("Por favor, introduce un número válido.");
+            if (choiceInt >= 1 && choiceInt <= levels.size()) {
+                Level selectedLevel = levels.get(choiceInt - 1);
+                playLevelInTerminal(selectedLevel);
+            } else if (choiceInt == levels.size() + 1) {
+                break;
+            } else {
+                System.out.println("Opción no válida, por favor inténtelo de nuevo.");
+                TimeUnit.MILLISECONDS.sleep(1000); // Pausa mejorada
             }
-        }
-    }
-
-    private static void playLevelInTerminal(Level level) {
-        if (level.getLayers().isEmpty()) {
-            System.out.println("Este nivel no tiene capas. No se puede jugar.");
+        } catch (NumberFormatException e) {
+            System.out.println("Por favor, introduce un número válido.");
+            try {
+                TimeUnit.MILLISECONDS.sleep(1000);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             return;
         }
+    }
+}
 
-        Layer layer = level.getLayers().get(0);
-        List<List<Integer>> tileMap = layer.getTileMap();
+private static void playLevelInTerminal(Level level) {
+    if (level.getLayers().isEmpty()) {
+        System.out.println("Este nivel no tiene capas. No se puede jugar.");
+        try {
+            TimeUnit.SECONDS.sleep(2);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        return;
+    }
 
-        int playerX = 1;
-        int playerY = 1;
+    Layer layer = level.getLayers().get(0);
+    List<List<Integer>> tileMap = layer.getTileMap();
+    int playerX = 1;
+    int playerY = 1;
+
+    try {
+        clearScreen();
+        System.out.println("Controles: W (Arriba), A (Izquierda), S (Abajo), D (Derecha), Q (Salir)");
+        System.out.println("Presiona Enter para comenzar...");
+        scanner.nextLine();
 
         while (true) {
+            clearScreen();
             renderLevel(tileMap, playerX, playerY);
+            System.out.print("Dirección (W/A/S/D/Q): ");
 
-            System.out.println("Mueve al jugador (W: arriba, A: izquierda, S: abajo, D: derecha, Q: salir):");
             String input = scanner.nextLine().toUpperCase();
-
-            if (input.equals("Q")) {
-                break;
-            }
+            if (input.equals("Q")) break;
 
             int newX = playerX;
             int newY = playerY;
@@ -377,6 +407,10 @@ public class GameManager {
                 case "A": newX--; break;
                 case "S": newY++; break;
                 case "D": newX++; break;
+                default:
+                    System.out.println("Tecla inválida. Usa W/A/S/D.");
+                    TimeUnit.MILLISECONDS.sleep(1000);
+                    continue;
             }
 
             if (newX >= 0 && newY >= 0 && newY < tileMap.size() && newX < tileMap.get(newY).size()) {
@@ -387,7 +421,10 @@ public class GameManager {
                 }
             }
         }
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
     }
+}
 
     private static void renderLevel(List<List<Integer>> tileMap, int playerX, int playerY) {
         for (int y = 0; y < tileMap.size(); y++) {
