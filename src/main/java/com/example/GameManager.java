@@ -160,74 +160,106 @@ public class GameManager {
         return new Sprite(type, imageFile, x, y, width, height);
     }
 
-    private static void saveGameToJson(Game game, String folderPath, String filename) {
-        File folder = new File(folderPath);
-        if (!folder.exists()) {
-            boolean created = folder.mkdirs();
-            if (!created) {
-                System.out.println("No se pudo crear la carpeta: " + folderPath);
-                return;
-            }
-        }
-    
-        if (!filename.endsWith(".json")) {
-            filename += ".json";
-        }
-    
-        String filePath = folderPath + File.separator + filename;
-    
-        try (FileWriter file = new FileWriter(filePath)) {
-            JSONObject gameJson = game.toJson();
-            
-            // Pretty print manual para json-simple
-            String jsonString = gameJson.toJSONString();
-            String prettyJson = formatJsonSimple(jsonString); // ¡Nuevo método!
-            
-            file.write(prettyJson);
-            System.out.println("Juego guardado en: " + filePath);
-        } catch (Exception e) {
-            System.out.println("Error al guardar el archivo JSON: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-    
-    // Método auxiliar para formatear JSON (para org.json.simple)
-    private static String formatJsonSimple(String jsonString) {
-        StringBuilder prettyJson = new StringBuilder();
-        int indentLevel = 0;
-        boolean inQuote = false;
-    
-        for (char c : jsonString.toCharArray()) {
-            if (c == '"' && (prettyJson.length() == 0 || prettyJson.charAt(prettyJson.length() - 1) != '\\')) {
-                inQuote = !inQuote;
-            }
-    
-            if (!inQuote) {
-                switch (c) {
-                    case '{':
-                    case '[':
-                        prettyJson.append(c).append("\n").append(getIndent(++indentLevel));
-                        break;
-                    case '}':
-                    case ']':
-                        prettyJson.append("\n").append(getIndent(--indentLevel)).append(c);
-                        break;
-                    case ',':
-                        prettyJson.append(c).append("\n").append(getIndent(indentLevel));
-                        break;
-                    case ':':
-                        prettyJson.append(c).append(" ");
-                        break;
-                    default:
-                        prettyJson.append(c);
+
+        private static void saveGameToJson(Game game, String folderPath, String filename) {
+            File folder = new File(folderPath);
+            if (!folder.exists()) {
+                boolean created = folder.mkdirs();
+                if (!created) {
+                    System.out.println("No se pudo crear la carpeta: " + folderPath);
+                    return;
                 }
-            } else {
-                prettyJson.append(c);
+            }
+    
+            if (!filename.endsWith(".json")) {
+                filename += ".json";
+            }
+    
+            String filePath = folderPath + File.separator + filename;
+    
+            try (FileWriter file = new FileWriter(filePath)) {
+                JSONObject gameJson = game.toJson();
+                String jsonString = gameJson.toJSONString();
+                String prettyJson = formatJsonSimple(jsonString);
+                file.write(prettyJson);
+                System.out.println("Juego guardado en: " + filePath);
+            } catch (Exception e) {
+                System.out.println("Error al guardar el archivo JSON: " + e.getMessage());
+                e.printStackTrace();
             }
         }
-        return prettyJson.toString();
-    }
     
+        // Método auxiliar para formatear JSON
+        private static String formatJsonSimple(String jsonString) {
+            StringBuilder prettyJson = new StringBuilder();
+            int indentLevel = 0;
+            boolean inQuote = false;
+            boolean inTileMap = false;
+            int arrayDepth = 0;
+    
+            for (int i = 0; i < jsonString.length(); i++) {
+                char c = jsonString.charAt(i);
+                
+                if (c == '"' && (i == 0 || jsonString.charAt(i - 1) != '\\')) {
+                    inQuote = !inQuote;
+                }
+    
+                if (!inQuote) {
+                    if (c == '[' && isTileMapKey(jsonString, i)) {
+                        inTileMap = true;
+                        arrayDepth = 1;
+                        prettyJson.append("[\n").append(getIndent(indentLevel + 1));
+                        continue;
+                    }
+    
+                    if (inTileMap) {
+                        if (c == '[') arrayDepth++;
+                        if (c == ']') arrayDepth--;
+    
+                        prettyJson.append(c);
+                        
+                        if (c == ',' && arrayDepth == 1) {
+                            prettyJson.append("\n").append(getIndent(indentLevel + 1));
+                        } else if (c == ',' && arrayDepth > 1) {
+                            prettyJson.append(" ");
+                        }
+    
+                        if (arrayDepth == 0) inTileMap = false;
+                        continue;
+                    }
+    
+                    switch (c) {
+                        case '{':
+                        case '[':
+                            prettyJson.append(c).append("\n").append(getIndent(++indentLevel));
+                            break;
+                        case '}':
+                        case ']':
+                            prettyJson.append("\n").append(getIndent(--indentLevel)).append(c);
+                            break;
+                        case ',':
+                            prettyJson.append(c).append("\n").append(getIndent(indentLevel));
+                            break;
+                        case ':':
+                            prettyJson.append(": ");
+                            break;
+                        default:
+                            prettyJson.append(c);
+                    }
+                } else {
+                    prettyJson.append(c);
+                }
+            }
+            return prettyJson.toString();
+        }
+    
+        // Método para detectar la clave "tileMap" (NUEVO)
+        private static boolean isTileMapKey(String jsonString, int pos) {
+            if (pos < 10) return false; // Evitar IndexOutOfBounds
+            String preceding = jsonString.substring(Math.max(0, pos - 10), pos);
+            return preceding.matches(".*\"tileMap\"\\s*:\\s*$");
+        }
+
     private static String getIndent(int level) {
         StringBuilder indent = new StringBuilder();
         for (int i = 0; i < level; i++) {
