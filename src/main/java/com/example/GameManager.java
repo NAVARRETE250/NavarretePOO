@@ -1,15 +1,16 @@
 package com.example;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import org.json.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONTokener;
 
 public class GameManager {
     private static final String RESOURCES_PATH = "NavarretePOO/src/main/resources/";
@@ -60,21 +61,39 @@ public class GameManager {
     }
 
     private static Game loadGameFromJson(String folderPath, String filename) {
-        JSONParser parser = new JSONParser();
-        File file = new File(folderPath + filename);
-        if (!file.exists()) {
-            System.out.println("El archivo no existe: " + file.getAbsolutePath());
-            return null;
+    try {
+        File file = new File(folderPath, filename);
+        FileInputStream fis = new FileInputStream(file);
+        
+        // Usa JSONTokener de org.json
+        JSONObject jsonObject = new JSONObject(new JSONTokener(fis));
+        
+        String name = jsonObject.getString("name");
+        JSONArray levelsArray = jsonObject.getJSONArray("levels");
+        List<Level> levels = new ArrayList<>();
+        
+        for (int i = 0; i < levelsArray.length(); i++) {
+            JSONObject levelJson = levelsArray.getJSONObject(i);
+            // Continúa con el parsing de cada nivel...
         }
-
-        try (FileReader reader = new FileReader(file)) {
-            JSONObject jsonObject = (JSONObject) parser.parse(reader);
-            return parseGame(jsonObject);
-        } catch (Exception e) {
-            System.out.println("Error al cargar el archivo JSON: " + e.getMessage());
-            return null;
-        }
+        
+        fis.close();
+        return new Game(name, levels);
+    } catch (Exception e) {
+        System.out.println("Error al cargar el archivo JSON: " + e.toString());
+        return null;
     }
+}
+
+// Método de conversión de emergencia
+private static JSONObject convertSimpleToStandard(org.json.simple.JSONObject simpleJson) {
+    try {
+        return new JSONObject(simpleJson.toJSONString());
+    } catch (Exception e) {
+        System.out.println("Error de conversión: " + e.getMessage());
+        return null;
+    }
+}
 
     private static Game parseGame(JSONObject jsonObject) {
         String name = (String) jsonObject.get("name");
@@ -170,18 +189,23 @@ public class GameManager {
             }
         }
     
-        String filePath = folderPath + filename;
+        if (!filename.endsWith(".json")) {
+            filename += ".json";
+        }
+    
+        String filePath = folderPath + File.separator + filename;
+    
         try (FileWriter file = new FileWriter(filePath)) {
-            JSONObject gameJson = game.toJson();
-            file.write(gameJson.toJSONString());
-            file.flush();
+            JSONObject jsonObject = game.toJson();
+            String prettyJson = jsonObject.toString(4); // 4 espacios de indentación
+            
+            file.write(prettyJson);
             System.out.println("Juego guardado en: " + filePath);
         } catch (Exception e) {
-            System.out.println("Error al guardar el archivo JSON: " + e.getMessage());
-            e.printStackTrace(); // Muestra la traza completa del error
+            e.printStackTrace();
         }
     }
-
+    
     private static String selectJsonFile(List<String> jsonFiles) {
         if (jsonFiles.isEmpty()) {
             System.out.println("No se encontraron archivos JSON en la carpeta.");

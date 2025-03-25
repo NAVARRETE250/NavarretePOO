@@ -1,5 +1,6 @@
 package com.example;
 
+import org.json.JSONTokener;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -36,15 +37,24 @@ public static void main(String[] args) {
         }
     
         // Paso 3: Cargar el juego desde el archivo JSON seleccionado
-        Game game = loadGameFromJson(resourcesPath, selectedFile);
-        if (game == null) {
-            System.out.println("No se pudo cargar el juego. Saliendo del programa...");
-            return;
-        }
-    
-        // Paso 4: Mostrar el menú principal
-        mainMenu(game, resourcesPath);
+ private static Game loadGameFromJson(String folderPath, String filename) {
+    try {
+        File file = new File(folderPath + File.separator + filename);
+        FileReader reader = new FileReader(file);
+        
+        // Usa JSONTokener en lugar de JSONParser
+        JSONObject jsonObject = new JSONObject(new JSONTokener(reader));
+        
+        String name = jsonObject.getString("name");
+        JSONArray levelsArray = jsonObject.getJSONArray("levels");
+        // Resto de tu lógica de carga...
+        
+        return new Game(name, levels);
+    } catch (Exception e) {
+        System.out.println("Error al cargar el archivo JSON: " + e.getMessage());
+        return null;
     }
+}
     
 private static String selectJsonFile(List<String> jsonFiles) {
         if (jsonFiles.isEmpty()) {
